@@ -12,7 +12,7 @@ def receive_messages(client_socket):
             data = client_socket.recv(1024)
             if not data:
                 break
-            print(f"Received message: {data.decode('utf-8')}")
+            print(f"Received message from {client_socket}: {data.decode('utf-8')}")
     except ConnectionResetError:
         print("Connection with the server closed.")
 
@@ -30,10 +30,12 @@ def start_client():
     receive_thread = threading.Thread(target=receive_messages, args=(client_socket,))
     receive_thread.start()
 
+    print("Enter a message (or 'exit' to quit):")
+
     try:
         while True:
             # Get user input and send it to the server
-            message = input("Enter a message (or 'exit' to quit): ")
+            message = input(">")
             if message.lower() == 'exit':
                 break
 

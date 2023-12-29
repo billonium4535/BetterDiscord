@@ -23,7 +23,8 @@ def handle_client(client_socket):
             broadcast_message(data, client_socket)
 
     except ConnectionResetError:
-        # Handle the case when the client closes the connection
+        print(f"Connection with {client_socket.getpeername()} closed by client.")
+    except OSError:
         print(f"Connection with {client_socket.getpeername()} closed by client.")
     finally:
         # Remove the client socket from the list when the connection is terminated
