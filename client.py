@@ -12,7 +12,7 @@ def receive_messages(client_socket):
             data = client_socket.recv(1024)
             if not data:
                 break
-            print(f"Received message from {client_socket}: {data.decode('utf-8')}")
+            print(f"Received message from {client_socket.getpeername()[0]}: {data.decode('utf-8')}")
     except ConnectionResetError:
         print("Connection with the server closed.")
 
