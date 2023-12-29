@@ -36,13 +36,13 @@ def broadcast_message(message, sender_socket):
     # Iterate through the list of connected clients and send the message to each client
     for client in connected_clients:
         # Check if the client is not the sender
-        if client != sender_socket:
-            try:
-                # Send the message to the client
-                client.send(message)
-            except socket.error:
-                # Remove the client socket from the list if there is an error sending the message
-                connected_clients.remove(client)
+        # if client != sender_socket:
+        try:
+            # Send the message to the client
+            client.send(message)
+        except socket.error:
+            # Remove the client socket from the list if there is an error sending the message
+            connected_clients.remove(client)
 
 
 def start_server():
