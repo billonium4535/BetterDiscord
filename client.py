@@ -2,7 +2,6 @@ import pygame
 from pygame.locals import *
 import socket
 import threading
-import time
 
 # Initialize Pygame
 pygame.init()
@@ -101,8 +100,11 @@ def receive_messages():
             if not data:
                 break
 
-            received_message = data.decode('utf-8')
-            chat_text.append(f"{time.strftime('%H:%M:%S', time.localtime())} : {client_socket.getpeername()[0]} : {received_message}")
+            chat_int = 0
+            received_message = data.decode('windows-1252')
+            while chat_int < len(received_message.split("\r\n")):
+                chat_text.append(received_message.split("\r\n")[chat_int])
+                chat_int += 1
 
     except ConnectionResetError:
         print("Connection with the server closed.")
@@ -145,7 +147,7 @@ while running:
                     # Check if there is text
                     if input_text:
                         # Send text and reset input
-                        client_socket.send(input_text.encode('utf-8'))
+                        client_socket.send(input_text.encode('windows-1252'))
                         input_text = ''
                 elif event.key == K_BACKSPACE:
                     input_text = input_text[:-1]
