@@ -1,6 +1,5 @@
 import socket
 import threading
-import os
 import csv
 import time
 
