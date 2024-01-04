@@ -1,0 +1,5 @@
+To update project on server:
+git pull origin main
+
+To run server:
+python3 server.py
