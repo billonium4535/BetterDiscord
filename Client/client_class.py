@@ -56,6 +56,24 @@ class ClientApp:
         except OSError:
             print("Connection with the server closed.")
 
+    def draw_input_box(self):
+        # Draw the input box
+        input_box.y = screen.get_height() - input_height - input_bottom_margin
+        pygame.draw.rect(screen, input_color_active if self.input_active else input_color_inactive, input_box, 20, 7)
+
+        # Draw the flashing cursor
+        if self.input_active:
+            flash_timer = pygame.time.get_ticks() // 500
+            if flash_timer % 2 == 0:  # Flash the cursor on/off
+                cursor_color = colors["discord-text"]
+                cursor_surface = font.render("|", True, cursor_color)
+                cursor_pos = (input_box.x + 10 + font.size(self.input_text)[0], input_box.y + 12)
+                screen.blit(cursor_surface, cursor_pos)
+
+        # Render the input text
+        input_surface = font.render(self.input_text, True, colors["discord-text"])
+        screen.blit(input_surface, (input_box.x + 10, input_box.y + 13))
+
     def run(self):
         running = True
         clock = pygame.time.Clock()
@@ -84,10 +102,7 @@ class ClientApp:
                 message_y_pos += 15
 
             # Draw the input box
-            input_box.y = screen.get_height() - input_height - input_bottom_margin
-            pygame.draw.rect(screen, input_color_inactive, input_box, 20, 7)
-            input_surface = font.render(self.input_text, True, colors["discord-text"])
-            screen.blit(input_surface, (input_box.x + 10, input_box.y + 13))
+            self.draw_input_box()
 
             # Draw the channel box
             pygame.draw.rect(screen, channel_color, channel_box)

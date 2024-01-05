@@ -29,8 +29,8 @@ input_bottom_margin = 20
 input_height = 40
 input_box = pygame.Rect(input_margin, (screen.get_height() - input_height - input_bottom_margin), (screen.get_width() - (input_margin * 2)), input_height)
 input_color_inactive = pygame.Color(colors["discord-message-box"])
+input_color_active = pygame.Color(colors["discord-message-box"])
 input_text = ""
-input_surface = font.render(input_text, True, input_color_inactive)
 
 # Channels settings
 channel_right_margin = 0
