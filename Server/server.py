@@ -34,10 +34,10 @@ def handle_client(client_socket):
             # Broadcast the message to all connected clients except the sender
             broadcast_message(f"{time.strftime('%H:%M:%S', time.localtime())} : {client_socket.getpeername()[0]} : {data.decode('windows-1252')}", client_socket)
 
-    except ConnectionResetError:
+    except (ConnectionResetError, BrokenPipeError):
         print(f"Connection with {client_socket.getpeername()} closed by client.")
-    except OSError:
-        print(f"Connection with {client_socket.getpeername()} closed by client.")
+    except OSError as e:
+        print(f"Error handling connection with {client_socket.getpeername()}: {e}")
     finally:
         # Remove the client socket from the list when the connection is terminated
         connected_clients.remove(client_socket)

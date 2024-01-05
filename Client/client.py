@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import socket
 import threading
+from colors import colors
 
 # Initialize Pygame
 pygame.init()
@@ -31,8 +32,7 @@ pygame.display.set_caption("Better Discord")
 chat_margin = 300
 chat_bottom_margin = 100
 chat_height = screen.get_height() - chat_bottom_margin
-chat_box = pygame.Rect(chat_margin, (screen.get_height() - chat_height - chat_bottom_margin),
-                       (screen.get_width() - (chat_margin * 2)), chat_height)
+chat_box = pygame.Rect(chat_margin, (screen.get_height() - chat_height - chat_bottom_margin), (screen.get_width() - (chat_margin * 2)), chat_height)
 chat_color = colors["discord-dark"]
 chat_text = []
 
@@ -64,9 +64,7 @@ channel_name_left_margin = 250
 channel_name_right_margin = 0
 channel_name_top_margin = 0
 channel_name_height = 50
-channel_name_box = pygame.Rect(channel_name_left_margin, channel_name_top_margin,
-                               (screen.get_width() - (channel_name_left_margin + channel_name_right_margin)),
-                               channel_name_height)
+channel_name_box = pygame.Rect(channel_name_left_margin, channel_name_top_margin, (screen.get_width() - (channel_name_left_margin + channel_name_right_margin)), channel_name_height)
 channel_name_color = colors["discord-dark"]
 channel_name_divider_color = colors["discord-divider"]
 channel_name_divider_box = pygame.Rect(0, (channel_name_top_margin + channel_name_height), screen.get_width(), 1)
