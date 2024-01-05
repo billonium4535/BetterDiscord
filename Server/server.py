@@ -13,6 +13,10 @@ connected_clients = []
 
 def handle_client(client_socket):
     try:
+        peer_name = client_socket.getpeername()
+    except:
+        peer_name = ["unknown", "unknown"]
+    try:
         # Send the messages.csv file to the client
         send_file(client_socket, SERVER_MESSAGES)
         while True:
@@ -22,22 +26,22 @@ def handle_client(client_socket):
                 break
 
             # Print the received message
-            print(f"Received message from {client_socket.getpeername()[0]}: {data.decode('windows-1252')}")
+            print(f"Received message from {peer_name[0]}: {data.decode('windows-1252')}")
 
             with open(SERVER_MESSAGES, 'a', newline='', encoding="windows-1252") as csv_file:
                 # Create a CSV writer object
                 csv_writer = csv.writer(csv_file)
 
                 # Write the data to a new line in the CSV file
-                csv_writer.writerow([f"{time.strftime('%H:%M:%S', time.localtime())} : {client_socket.getpeername()[0]} : {data.decode('windows-1252')}"])
+                csv_writer.writerow([f"{time.strftime('%H:%M:%S', time.localtime())} : {peer_name[0]} : {data.decode('windows-1252')}"])
 
             # Broadcast the message to all connected clients except the sender
-            broadcast_message(f"{time.strftime('%H:%M:%S', time.localtime())} : {client_socket.getpeername()[0]} : {data.decode('windows-1252')}", client_socket)
+            broadcast_message(f"{time.strftime('%H:%M:%S', time.localtime())} : {peer_name[0]} : {data.decode('windows-1252')}", client_socket)
 
     except (ConnectionResetError, BrokenPipeError):
-        print(f"Connection with {client_socket.getpeername()} closed by client.")
+        print(f"Connection with {peer_name[0]} closed by client.")
     except OSError as e:
-        print(f"Error handling connection with {client_socket.getpeername()}: {e}")
+        print(f"Error handling connection with {peer_name[0]}: {e}")
     finally:
         # Remove the client socket from the list when the connection is terminated
         connected_clients.remove(client_socket)

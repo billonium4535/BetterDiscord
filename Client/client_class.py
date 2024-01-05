@@ -27,7 +27,8 @@ class ClientApp:
 
     def init_socket(self):
         # Socket settings
-        SERVER_HOST = '82.20.26.36'
+        # 82.20.26.36/127.0.0.1
+        SERVER_HOST = "82.20.26.36"
         SERVER_PORT = 8446
 
         # Connect to the server
