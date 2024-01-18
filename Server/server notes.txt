@@ -1,5 +1,8 @@
 To update project on server:
 git pull origin main
 
+To clone project on server:
+git clone https://github.com/username/repository-name.git
+
 To run server:
 python3 server.py
