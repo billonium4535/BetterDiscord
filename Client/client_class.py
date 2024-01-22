@@ -28,11 +28,11 @@ class ClientApp:
     def init_socket(self):
         # Socket settings
         # 82.20.26.36/127.0.0.1
-        SERVER_HOST = "82.20.26.36"
-        SERVER_PORT = 8446
+        server_host = "82.20.26.36"
+        server_port = 8446
 
         # Connect to the server
-        self.client_socket.connect((SERVER_HOST, SERVER_PORT))
+        self.client_socket.connect((server_host, server_port))
 
         # Start a separate thread for receiving messages
         self.receive_thread.start()
