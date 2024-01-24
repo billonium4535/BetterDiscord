@@ -42,6 +42,8 @@ class MainWindowGUI:
         self.output_selected_device = None
         self.input_open = False
         self.output_open = False
+        self.scroll_offset_input = 0
+        self.scroll_offset_output = 0
 
         self.init_display()
         self.run()
@@ -74,7 +76,6 @@ class MainWindowGUI:
         pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
 
     def draw_call_buttons(self):
-
         if not self.mute_button_hover:
             pygame.draw.rect(self.screen.get_surface(), colors["discord-message-box"], self.mute_button, border_radius=10)
         else:
@@ -107,20 +108,28 @@ class MainWindowGUI:
         pygame.draw.rect(self.screen.get_surface(), colors["white"], self.output_device_dropdown, border_radius=10)
 
         if self.input_open:
-            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 5, 200, 25 * (len(self.input_devices) + 1)), border_radius=10)
-            for i, (name, index) in enumerate(self.input_devices):
-                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (175, 35 + (25 * i)))
+            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 5, 200, 25 * min(len(self.input_devices) + 1, 6)), border_radius=10)
+            for i, (name, index) in enumerate(self.input_devices[self.scroll_offset_input:self.scroll_offset_input + 5]):
+                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (180, 35 + (25 * i)))
+            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 10, 5, 140), border_radius=10)
+            scroll_indicator_height = 140 / len(self.input_devices) * 5
+            scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_input / (len(self.input_devices) - 5))
+            pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 10 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
 
         if self.output_open:
-            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 45, 200, 25 * (len(self.output_devices) + 1)), border_radius=10)
-            for i, (name, index) in enumerate(self.output_devices):
-                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (175, 75 + (25 * i)))
+            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 45, 200, 25 * min(len(self.output_devices) + 1, 6)), border_radius=10)
+            for i, (name, index) in enumerate(self.output_devices[self.scroll_offset_output:self.scroll_offset_output + 5]):
+                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (180, 75 + (25 * i)))
+            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 50, 5, 140), border_radius=10)
+            scroll_indicator_height = 140 / len(self.input_devices) * 5
+            scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_output / (len(self.output_devices) - 5))
+            pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 50 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
 
         if self.input_selected_device:
-            self.screen.get_surface().blit(font.render(self.input_selected_device[0], True, colors["discord-dark"]), (175, 7))
+            self.screen.get_surface().blit(font.render(self.input_selected_device[0], True, colors["discord-dark"]), (180, 7))
 
         if self.output_selected_device and not self.input_open:
-            self.screen.get_surface().blit(font.render(self.output_selected_device[0], True, colors["discord-dark"]), (175, 47))
+            self.screen.get_surface().blit(font.render(self.output_selected_device[0], True, colors["discord-dark"]), (180, 47))
 
     def run(self):
         self.running = True
@@ -151,6 +160,10 @@ class MainWindowGUI:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     self.mouse_down = True
+                elif event.button == 4:
+                    self.handle_scroll(-1)
+                elif event.button == 5:
+                    self.handle_scroll(1)
             elif event.type == pygame.MOUSEBUTTONUP:
                 self.mouse_down = False
                 self.debouncer = False
@@ -191,43 +204,55 @@ class MainWindowGUI:
                     self.output_open = not self.output_open
                     self.debouncer = True
                 if pygame.Rect(175, 5, 200, 25 * (len(self.input_devices) + 1)).collidepoint(mouse_x, mouse_y) and self.input_open:
-                    for i, (name, index) in enumerate(self.input_devices):
+                    for i, (name, index) in enumerate(self.input_devices[self.scroll_offset_input:self.scroll_offset_input + 5]):
                         if pygame.Rect(175, 35 + (25 * i), 200, 25).collidepoint(mouse_x, mouse_y):
                             self.input_selected_device = (name, index)
                             self.input_open = False
+                            self.debouncer = True
                 if pygame.Rect(175, 45, 200, 25 * (len(self.output_devices) + 1)).collidepoint(mouse_x, mouse_y) and self.output_open:
-                    for i, (name, index) in enumerate(self.output_devices):
+                    for i, (name, index) in enumerate(self.output_devices[self.scroll_offset_output:self.scroll_offset_output + 5]):
                         if pygame.Rect(175, 75 + (25 * i), 200, 25).collidepoint(mouse_x, mouse_y):
                             self.output_selected_device = (name, index)
                             self.output_open = False
+                            self.debouncer = True
                 if not self.input_device_dropdown.collidepoint(mouse_x, mouse_y) and self.input_open:
                     self.input_open = False
+                    self.debouncer = True
                 if not self.output_device_dropdown.collidepoint(mouse_x, mouse_y) and self.output_open:
                     self.output_open = False
+                    self.debouncer = True
         else:
             self.dragging = False
         self.threshold = round(0 + (self.max_threshold - 0) * (((self.slider_circle_x / 138) * 100) / 100.0))
 
     def handle_mouse_position(self):
-        if self.voice_channel_1_box.collidepoint(pygame.mouse.get_pos()):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        if self.voice_channel_1_box.collidepoint(mouse_x, mouse_y):
             self.voice_channel_1_box_hover = True
         else:
             self.voice_channel_1_box_hover = False
 
-        if self.mute_button.collidepoint(pygame.mouse.get_pos()):
+        if self.mute_button.collidepoint(mouse_x, mouse_y):
             self.mute_button_hover = True
         else:
             self.mute_button_hover = False
 
-        if self.deafan_button.collidepoint(pygame.mouse.get_pos()):
+        if self.deafan_button.collidepoint(mouse_x, mouse_y):
             self.deafan_button_hover = True
         else:
             self.deafan_button_hover = False
 
-        if self.leave_call_button.collidepoint(pygame.mouse.get_pos()):
+        if self.leave_call_button.collidepoint(mouse_x, mouse_y):
             self.leave_call_button_hover = True
         else:
             self.leave_call_button_hover = False
+
+    def handle_scroll(self, direction):
+        if self.input_open:
+            self.scroll_offset_input = max(0, min(len(self.input_devices) - 5, self.scroll_offset_input + direction))
+        elif self.output_open:
+            self.scroll_offset_output = max(0, min(len(self.output_devices) - 5, self.scroll_offset_output + direction))
 
 
 MainWindowGUI()
