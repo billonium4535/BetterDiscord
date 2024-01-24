@@ -16,6 +16,7 @@ class MainWindowGUI:
 
         self.threshold = 500
         self.max_threshold = 1000
+        self.RawAudio = False
 
         self.slider_width = 150
         self.slider_circle_x = (self.threshold / self.max_threshold) * 138  # max 138
@@ -74,6 +75,11 @@ class MainWindowGUI:
     def draw_input_sensitivity_slider(self):
         pygame.draw.rect(self.screen.get_surface(), colors["white"], (5, 375, self.slider_width, 12), border_radius=10)
         pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
+        self.screen.get_surface().blit(font.render(f"{(self.threshold / 10)}%", True, colors["white"]), (64, 355))
+        if self.threshold == 0:
+            self.RawAudio = True
+        else:
+            self.RawAudio = False
 
     def draw_call_buttons(self):
         if not self.mute_button_hover:
