@@ -91,7 +91,7 @@ class MainWindowGUI:
         else:
             pygame.draw.rect(self.screen.get_surface(), colors["discord-divider"], self.leave_call_button, border_radius=10)
 
-        self.screen.get_surface().blit(pygame.transform.scale(pygame.image.load("./Icons/window_icon.png"), (17, 17)), (123.5, 328))
+        self.screen.get_surface().blit(pygame.transform.scale(pygame.image.load("./Icons/leave_call.png"), (17, 17)), (126, 329))
 
     def run(self):
         self.running = True
