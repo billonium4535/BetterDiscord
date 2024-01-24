@@ -1,4 +1,10 @@
 import pyaudio
+import numpy as np
+
+chunk_size = 1024
+sample_format = pyaudio.paInt16
+channels = 1
+sample_rate = 44100
 
 
 def get_audio_input_devices():
@@ -31,3 +37,21 @@ def get_audio_output_devices():
 
     p.terminate()
     return output_devices
+
+
+def record_audio(RawAudio, threshold, input_device_index):
+    p = pyaudio.PyAudio()
+    stream_in = p.open(format=sample_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk_size, input_device_index=input_device_index)
+    input_data = stream_in.read(chunk_size)
+    input_array = np.frombuffer(input_data, dtype=np.int16)
+
+    audio_level = np.abs(input_array).mean()
+
+    if RawAudio or (not RawAudio and audio_level > threshold):
+        return input_data
+
+
+def play_audio(output_data, output_device_index):
+    p = pyaudio.PyAudio()
+    stream_out = p.open(format=sample_format, channels=channels, rate=sample_rate, output=True, frames_per_buffer=chunk_size, output_device_index=output_device_index)
+    stream_out.write(output_data)
