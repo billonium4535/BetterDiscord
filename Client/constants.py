@@ -5,8 +5,10 @@ from colors import colors
 pygame.init()
 
 # Font settings
-FONT_SIZE = 20
-font = pygame.font.Font(None, FONT_SIZE)
+FONT_SIZE = 15
+font = pygame.font.Font("./Fonts/arial.ttf", FONT_SIZE)
+font.set_italic(True)
+
 
 screen_info = pygame.display.Info()
 min_width, min_height = 400, 400
