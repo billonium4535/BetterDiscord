@@ -1,5 +1,6 @@
 from constants import *
 from colors import *
+from audio import get_audio_input_devices, get_audio_output_devices
 
 
 class MainWindowGUI:
@@ -16,8 +17,8 @@ class MainWindowGUI:
         self.threshold = 500
         self.max_threshold = 1000
 
-        self.slider_width = 200
-        self.slider_circle_x = (self.threshold / self.max_threshold) * 188  # max 188
+        self.slider_width = 150
+        self.slider_circle_x = (self.threshold / self.max_threshold) * 138  # max 138
         self.circle_radius = 6
         self.dragging = False
 
@@ -33,13 +34,21 @@ class MainWindowGUI:
         self.leave_call_button = pygame.Rect(110, 325, 45, 25)
         self.leave_call_button_hover = False
 
+        self.input_devices = get_audio_input_devices()
+        self.output_devices = get_audio_output_devices()
+        self.input_device_dropdown = pygame.Rect(175, 5, 200, 25)
+        self.output_device_dropdown = pygame.Rect(175, 45, 200, 25)
+        self.input_selected_device = None
+        self.output_selected_device = None
+        self.input_open = False
+        self.output_open = False
+
         self.init_display()
         self.run()
 
     def init_display(self):
         self.screen.set_mode((min_width, min_height))
         self.screen.set_caption("Better Discord")
-        self.screen.get_surface().fill(colors["discord-dark"])
         self.screen.set_icon(pygame.image.load("./Icons/window_icon.png"))
 
     def draw_voice_channels(self):
@@ -61,8 +70,8 @@ class MainWindowGUI:
         self.screen.get_surface().blit(pygame.transform.scale(pygame.image.load("./Icons/voice_channel.png"), (17, 17)), (15, 10))
 
     def draw_input_sensitivity_slider(self):
-        pygame.draw.rect(self.screen.get_surface(), colors["white"], (100, 375, self.slider_width, 12), border_radius=10)
-        pygame.draw.circle(self.screen.get_surface(), colors["red"], (106 + self.slider_circle_x, 381), 6)
+        pygame.draw.rect(self.screen.get_surface(), colors["white"], (5, 375, self.slider_width, 12), border_radius=10)
+        pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
 
     def draw_call_buttons(self):
 
@@ -93,18 +102,42 @@ class MainWindowGUI:
 
         self.screen.get_surface().blit(pygame.transform.scale(pygame.image.load("./Icons/leave_call.png"), (17, 17)), (126, 329))
 
+    def draw_devices_dropdown(self):
+        pygame.draw.rect(self.screen.get_surface(), colors["white"], self.input_device_dropdown, border_radius=10)
+        pygame.draw.rect(self.screen.get_surface(), colors["white"], self.output_device_dropdown, border_radius=10)
+
+        if self.input_open:
+            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 5, 200, 25 * (len(self.input_devices) + 1)), border_radius=10)
+            for i, (name, index) in enumerate(self.input_devices):
+                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (175, 35 + (25 * i)))
+
+        if self.output_open:
+            pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 45, 200, 25 * (len(self.output_devices) + 1)), border_radius=10)
+            for i, (name, index) in enumerate(self.output_devices):
+                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (175, 75 + (25 * i)))
+
+        if self.input_selected_device:
+            self.screen.get_surface().blit(font.render(self.input_selected_device[0], True, colors["discord-dark"]), (175, 7))
+
+        if self.output_selected_device and not self.input_open:
+            self.screen.get_surface().blit(font.render(self.output_selected_device[0], True, colors["discord-dark"]), (175, 47))
+
     def run(self):
         self.running = True
         clock = pygame.time.Clock()
 
         while self.running:
+            self.screen.get_surface().fill(colors["discord-dark"])
             self.handle_mouse_events()
+
+            # if self.mouse_down:
             self.handle_mouse_click()
             self.handle_mouse_position()
 
             self.draw_voice_channels()
             self.draw_input_sensitivity_slider()
             self.draw_call_buttons()
+            self.draw_devices_dropdown()
 
             pygame.display.flip()
             clock.tick(30)
@@ -116,7 +149,8 @@ class MainWindowGUI:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self.mouse_down = True
+                if event.button == 1:
+                    self.mouse_down = True
             elif event.type == pygame.MOUSEBUTTONUP:
                 self.mouse_down = False
                 self.debouncer = False
@@ -126,19 +160,19 @@ class MainWindowGUI:
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
             # Threshold slider
-            circle_center = (106 + self.slider_circle_x, 381)
+            circle_center = (11 + self.slider_circle_x, 381)
             if circle_center[0] - self.circle_radius <= mouse_x <= circle_center[0] + self.circle_radius:
                 self.dragging = True
             if self.dragging:
-                self.slider_circle_x = max(0, min(188, mouse_x - 106))
+                self.slider_circle_x = max(0, min(138, mouse_x - 11))
 
             # Call buttons
             if not self.debouncer:
-                if self.mute_button.collidepoint(pygame.mouse.get_pos()):
+                if self.mute_button.collidepoint(mouse_x, mouse_y):
                     if not self.deafaned:
                         self.muted = not self.muted
                     self.debouncer = True
-                if self.deafan_button.collidepoint(pygame.mouse.get_pos()):
+                if self.deafan_button.collidepoint(mouse_x, mouse_y):
                     if self.deafaned:
                         self.deafaned = False
                         self.muted = False
@@ -146,11 +180,33 @@ class MainWindowGUI:
                         self.deafaned = True
                         self.muted = True
                     self.debouncer = True
-                if self.leave_call_button.collidepoint(pygame.mouse.get_pos()):
+                if self.leave_call_button.collidepoint(mouse_x, mouse_y):
                     self.debouncer = True
+
+                # Dropdowns
+                if self.input_device_dropdown.collidepoint(mouse_x, mouse_y) and not self.output_open:
+                    self.input_open = not self.input_open
+                    self.debouncer = True
+                if self.output_device_dropdown.collidepoint(mouse_x, mouse_y) and not self.input_open:
+                    self.output_open = not self.output_open
+                    self.debouncer = True
+                if pygame.Rect(175, 5, 200, 25 * (len(self.input_devices) + 1)).collidepoint(mouse_x, mouse_y) and self.input_open:
+                    for i, (name, index) in enumerate(self.input_devices):
+                        if pygame.Rect(175, 35 + (25 * i), 200, 25).collidepoint(mouse_x, mouse_y):
+                            self.input_selected_device = (name, index)
+                            self.input_open = False
+                if pygame.Rect(175, 45, 200, 25 * (len(self.output_devices) + 1)).collidepoint(mouse_x, mouse_y) and self.output_open:
+                    for i, (name, index) in enumerate(self.output_devices):
+                        if pygame.Rect(175, 75 + (25 * i), 200, 25).collidepoint(mouse_x, mouse_y):
+                            self.output_selected_device = (name, index)
+                            self.output_open = False
+                if not self.input_device_dropdown.collidepoint(mouse_x, mouse_y) and self.input_open:
+                    self.input_open = False
+                if not self.output_device_dropdown.collidepoint(mouse_x, mouse_y) and self.output_open:
+                    self.output_open = False
         else:
             self.dragging = False
-        self.threshold = round(0 + (self.max_threshold - 0) * (((self.slider_circle_x / 188) * 100) / 100.0))
+        self.threshold = round(0 + (self.max_threshold - 0) * (((self.slider_circle_x / 138) * 100) / 100.0))
 
     def handle_mouse_position(self):
         if self.voice_channel_1_box.collidepoint(pygame.mouse.get_pos()):
