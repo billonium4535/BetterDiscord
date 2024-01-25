@@ -1,102 +1,107 @@
 import socket
 import threading
-import csv
-import time
 
-SERVER_HOST = '0.0.0.0'
-SERVER_PORT = 8446
-SERVER_MESSAGES = "messages.csv"
-
-# List to store connected client sockets
-connected_clients = []
+from server_client_connection import server_socket_setup
+from get_version import get_version
 
 
-def handle_client(client_socket):
-    try:
-        peer_name = client_socket.getpeername()
-    except:
-        peer_name = ["unknown", "unknown"]
-    try:
-        # Send the messages.csv file to the client
-        send_file(client_socket, SERVER_MESSAGES)
-        while True:
-            # Receive data from the client
-            data = client_socket.recv(1024)
-            if not data:
-                break
+class Server:
+    def __init__(self):
+        self.running = True
+        self.server_host = '0.0.0.0'
+        self.sending_audio_socket = server_socket_setup(self.server_host, 8450, socket.AF_INET, socket.SOCK_STREAM, 5)
+        self.receiving_audio_socket = server_socket_setup(self.server_host, 8451, socket.AF_INET, socket.SOCK_STREAM, 5)
+        # self.sending_messages_socket = server_socket_setup(self.server_host, 8452, socket.AF_INET, socket.SOCK_STREAM, 5)
+        # self.receiving_messages_socket = server_socket_setup(self.server_host, 8453, socket.AF_INET, socket.SOCK_STREAM, 5)
+        # self.receiving_old_messages_socket = server_socket_setup(self.server_host, 8454, socket.AF_INET, socket.SOCK_STREAM, 5)
+        # self.sending_screenshare_socket = server_socket_setup(self.server_host, 8455, socket.AF_INET, socket.SOCK_STREAM, 5)
+        # self.receiving_screenshare_socket = server_socket_setup(self.server_host, 8456, socket.AF_INET, socket.SOCK_STREAM, 5)
+        self.updater_socket = server_socket_setup(self.server_host, 8457, socket.AF_INET, socket.SOCK_STREAM, 5)
+        self.connected_clients = []
+        self.connected_addresses = []
+        self.client_audio_data = {}
 
-            # Print the received message
-            print(f"Received message from {peer_name[0]}: {data.decode('windows-1252')}")
+        self.version = get_version()
 
-            with open(SERVER_MESSAGES, 'a', newline='', encoding="windows-1252") as csv_file:
-                # Create a CSV writer object
-                csv_writer = csv.writer(csv_file)
+        self.run()
 
-                # Write the data to a new line in the CSV file
-                csv_writer.writerow([f"{time.strftime('%H:%M:%S', time.localtime())} : {peer_name[0]} : {data.decode('windows-1252')}"])
+    def listen_for_clients(self):
+        sockets_to_listen = [
+            self.sending_audio_socket,
+            self.receiving_audio_socket,
+            # self.sending_messages_socket,
+            # self.receiving_messages_socket,
+            # self.receiving_old_messages_socket,
+            # self.sending_screenshare_socket,
+            # self.receiving_screenshare_socket,
+            self.updater_socket
+        ]
 
-            # Broadcast the message to all connected clients except the sender
-            broadcast_message(f"{time.strftime('%H:%M:%S', time.localtime())} : {peer_name[0]} : {data.decode('windows-1252')}", client_socket)
+        for server_socket in sockets_to_listen:
+            server_socket.settimeout(1)
+            try:
+                client_socket, client_address = server_socket.accept()
+                self.connected_clients.append(client_socket)
+                self.connected_addresses.append(client_address)
 
-    except (ConnectionResetError, BrokenPipeError):
-        print(f"Connection with {peer_name[0]} closed by client.")
-    except OSError as e:
-        print(f"Error handling connection with {peer_name[0]}: {e}")
-    finally:
-        # Remove the client socket from the list when the connection is terminated
-        connected_clients.remove(client_socket)
+                server_socket.settimeout(None)
+
+                if server_socket == self.sending_audio_socket:
+                    threading.Thread(target=self.client_sending_audio, args=[client_socket]).start()
+                elif server_socket == self.receiving_audio_socket:
+                    threading.Thread(target=self.client_receiving_audio, args=[client_socket]).start()
+                if server_socket == self.updater_socket:
+                    threading.Thread(target=self.client_updater, args=[client_socket]).start()
+            except:
+                pass
+
+    def client_disconnect(self, client_socket):
+        if client_socket in self.client_audio_data:
+            del self.client_audio_data[client_socket]
         client_socket.close()
 
-
-def send_file(client_socket, file_name):
-    try:
-        with open(file_name, 'rb') as file:
-            data = file.read(1024)
-            while data:
-                client_socket.send(data)
-                data = file.read(1024)
-    except FileNotFoundError:
-        print(f"File {file_name} not found.")
-    except Exception as e:
-        print(f"Error sending file {file_name}: {e}")
-
-
-def broadcast_message(message, sender_socket):
-    # Iterate through the list of connected clients and send the message to each client
-    for client in connected_clients:
-        # Check if the client is not the sender
-        # if client != sender_socket:
+    def client_sending_audio(self, client_socket):
         try:
-            # Send the message to the client
-            client.send(message.encode('windows-1252'))
-        except socket.error:
-            # Remove the client socket from the list if there is an error sending the message
-            connected_clients.remove(client)
+            while self.running:
+                data = client_socket.recv(1024)
+                if not data:
+                    break
+                self.client_audio_data[client_socket] = data
+        except Exception as e:
+            pass
+        finally:
+            self.client_disconnect(client_socket)
+
+    def client_receiving_audio(self, client_socket):
+        try:
+            while self.running:
+                merged_audio = b"".join([audio_data for sock, audio_data in self.client_audio_data.items() if sock != client_socket])
+                for sock in self.client_audio_data.keys():
+                    if sock != client_socket:
+                        sock.send(merged_audio)
+        except Exception as e:
+            pass
+        finally:
+            self.client_disconnect(client_socket)
+
+    def client_updater(self, client_socket):
+        try:
+            while self.running:
+                data = client_socket.recv(1024).decode('windows-1252')
+                if not data:
+                    break
+                if data == "CONNECTION_CHECK":
+                    client_socket.send("200 OK".encode('windows-1252'))
+                if data == "GET_VERSION":
+                    client_socket.send(self.version.encode('windows-1252'))
+        except Exception as e:
+            pass
+        finally:
+            self.client_disconnect(client_socket)
+
+    def run(self):
+        while self.running:
+            self.listen_for_clients()
 
 
-def start_server():
-    # Create a socket object
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Bind the socket to a specific address and port
-    server_socket.bind((SERVER_HOST, SERVER_PORT))
-
-    # Listen for incoming connections (maximum of 10)
-    server_socket.listen(10)
-    print(f"Server listening on {SERVER_HOST}:{SERVER_PORT}")
-
-    while True:
-        # Accept a connection from a client
-        client_socket, addr = server_socket.accept()
-        print(f"Accepted connection from {addr}")
-
-        # Add the client socket to the list of connected clients
-        connected_clients.append(client_socket)
-
-        # Start a new thread to handle the client
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
-        client_handler.start()
-
-
-if __name__ == "__main__":
-    start_server()
+Server()
