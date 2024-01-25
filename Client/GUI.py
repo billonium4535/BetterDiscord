@@ -1,7 +1,6 @@
 import pygame.draw
-import math
 
-from constants import *
+from constants import init_font
 from colors import *
 from audio import get_audio_input_devices, get_audio_output_devices
 
@@ -60,6 +59,7 @@ class MainWindowGUI:
         self.dots = 0
 
         self.init_display()
+        self.font = init_font()
         self.run()
 
     def init_display(self):
@@ -78,7 +78,7 @@ class MainWindowGUI:
         pygame.draw.rect(self.screen.get_surface(), colors["white"], (5, 5, 150, 300), 2, border_radius=10)
 
         # vc text
-        voice_channel_1_surface = font.render("Voice Channel 1", True, colors["discord-text"])
+        voice_channel_1_surface = self.font.render("Voice Channel 1", True, colors["discord-text"])
         voice_channel_1_rect = voice_channel_1_surface.get_rect().center = (35, 10)
         self.screen.get_surface().blit(voice_channel_1_surface, voice_channel_1_rect)
 
@@ -88,7 +88,7 @@ class MainWindowGUI:
     def draw_input_sensitivity_slider(self):
         pygame.draw.rect(self.screen.get_surface(), colors["white"], (5, 375, self.slider_width, 12), border_radius=10)
         pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
-        self.screen.get_surface().blit(font.render(f"{(self.threshold / 10)}%", True, colors["white"]), (64, 355))
+        self.screen.get_surface().blit(self.font.render(f"{(self.threshold / 10)}%", True, colors["white"]), (64, 355))
         if self.threshold == 0:
             self.raw_audio = True
         else:
@@ -129,7 +129,7 @@ class MainWindowGUI:
         if self.input_open:
             pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 5, 200, 25 * min(len(self.input_devices) + 1, 6)), border_radius=10)
             for i, (name, index) in enumerate(self.input_devices[self.scroll_offset_input:self.scroll_offset_input + 5]):
-                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (180, 35 + (25 * i)))
+                self.screen.get_surface().blit(self.font.render(name, True, colors["discord-dark"]), (180, 35 + (25 * i)))
             pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 10, 5, 140), border_radius=10)
             scroll_indicator_height = 140 / len(self.input_devices) * 5
             scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_input / (len(self.input_devices) - 5))
@@ -138,17 +138,17 @@ class MainWindowGUI:
         if self.output_open:
             pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 45, 200, 25 * min(len(self.output_devices) + 1, 6)), border_radius=10)
             for i, (name, index) in enumerate(self.output_devices[self.scroll_offset_output:self.scroll_offset_output + 5]):
-                self.screen.get_surface().blit(font.render(name, True, colors["discord-dark"]), (180, 75 + (25 * i)))
+                self.screen.get_surface().blit(self.font.render(name, True, colors["discord-dark"]), (180, 75 + (25 * i)))
             pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 50, 5, 140), border_radius=10)
             scroll_indicator_height = 140 / len(self.input_devices) * 5
             scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_output / (len(self.output_devices) - 5))
             pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 50 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
 
         if self.input_selected_device:
-            self.screen.get_surface().blit(font.render(self.input_selected_device[0], True, colors["discord-dark"]), (180, 7))
+            self.screen.get_surface().blit(self.font.render(self.input_selected_device[0], True, colors["discord-dark"]), (180, 7))
 
         if self.output_selected_device and not self.input_open:
-            self.screen.get_surface().blit(font.render(self.output_selected_device[0], True, colors["discord-dark"]), (180, 47))
+            self.screen.get_surface().blit(self.font.render(self.output_selected_device[0], True, colors["discord-dark"]), (180, 47))
 
     def draw_connecting_screen(self):
         pygame.draw.line(self.screen.get_surface(), colors["white"], (self.floor_x[0], self.floor_y), (self.floor_x[1], self.floor_y), 1)
@@ -162,7 +162,7 @@ class MainWindowGUI:
 
         self.ball_y += self.ball_speed_y
 
-        self.screen.get_surface().blit(font.render("Connecting to server" + "." * int(self.dots), True, colors["white"]), ((self.screen_width // 2) - 75, 75))
+        self.screen.get_surface().blit(self.font.render("Connecting to server" + "." * int(self.dots), True, colors["white"]), ((self.screen_width // 2) - 75, 75))
         self.dots = (self.dots + 0.1) % 4
 
     def run(self):
@@ -177,7 +177,7 @@ class MainWindowGUI:
             self.handle_mouse_click()
             self.handle_mouse_position()
 
-            if self.connected_to_server:
+            if self.handle_server_connection_check():
                 self.draw_voice_channels()
                 self.draw_input_sensitivity_slider()
                 self.draw_call_buttons()
@@ -191,6 +191,9 @@ class MainWindowGUI:
         pygame.quit()
 
     def handle_server_connection_check(self):
+        # Simulate waiting for a server connection
+        if pygame.time.get_ticks() >= 5000:
+            self.connected_to_server = True
         return self.connected_to_server
 
     def handle_mouse_events(self):
@@ -215,7 +218,8 @@ class MainWindowGUI:
             # Threshold slider
             circle_center = (11 + self.slider_circle_x, 381)
             if circle_center[0] - self.circle_radius <= mouse_x <= circle_center[0] + self.circle_radius:
-                self.dragging = True
+                if circle_center[1] - self.circle_radius <= mouse_y <= circle_center[1] + self.circle_radius:
+                    self.dragging = True
             if self.dragging:
                 self.slider_circle_x = max(0, min(138, mouse_x - 11))
 
@@ -293,6 +297,3 @@ class MainWindowGUI:
             self.scroll_offset_input = max(0, min(len(self.input_devices) - 5, self.scroll_offset_input + direction))
         elif self.output_open:
             self.scroll_offset_output = max(0, min(len(self.output_devices) - 5, self.scroll_offset_output + direction))
-
-
-MainWindowGUI()
