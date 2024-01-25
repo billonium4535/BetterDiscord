@@ -39,7 +39,7 @@ def get_audio_output_devices():
     return output_devices
 
 
-def record_audio(RawAudio, threshold, input_device_index):
+def record_audio(raw_audio, threshold, input_device_index):
     p = pyaudio.PyAudio()
     stream_in = p.open(format=sample_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk_size, input_device_index=input_device_index)
     input_data = stream_in.read(chunk_size)
@@ -47,7 +47,7 @@ def record_audio(RawAudio, threshold, input_device_index):
 
     audio_level = np.abs(input_array).mean()
 
-    if RawAudio or (not RawAudio and audio_level > threshold):
+    if raw_audio or (not raw_audio and audio_level > threshold):
         return input_data
 
 
