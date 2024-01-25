@@ -11,7 +11,6 @@ font.set_italic(True)
 
 
 screen_info = pygame.display.Info()
-min_width, min_height = 400, 400
 
 # Set up the Pygame window
 screen = pygame.display.set_mode((screen_info.current_w, (screen_info.current_h - 71)), pygame.RESIZABLE)
