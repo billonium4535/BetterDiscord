@@ -25,6 +25,8 @@ class UpdaterWindowGUI:
         self.downloaded_data_size = 0
         self.updater_socket = connect_to_server(self.server_address, 8457, socket.AF_INET, socket.SOCK_STREAM)
 
+        self.current_version = "v1.0"
+
         self.init_display()
         self.font = init_font()
         self.run()
@@ -76,7 +78,8 @@ class UpdaterWindowGUI:
         while self.running:
             self.screen.get_surface().fill(colors["discord-dark"])
             self.handle_mouse_events()
-            if not self.handle_server_connection_check():
+            if not self.connected_to_server:
+                self.handle_server_connection_check()
                 self.draw_connecting_screen()
             elif not self.check_current_version():
                 self.update_client()
@@ -91,18 +94,26 @@ class UpdaterWindowGUI:
 
     def handle_server_connection_check(self):
         # Simulate waiting for a server connection
-        if pygame.time.get_ticks() >= 5000:
-            self.connected_to_server = True
-        return self.connected_to_server
+        if pygame.time.get_ticks() >= 2500:
+            self.updater_socket.send("CONNECTION_CHECK".encode('windows-1252'))
+            if self.updater_socket.recv(1024).decode('windows-1252') == "200 OK":
+                self.connected_to_server = True
+            else:
+                self.connected_to_server = False
 
     def check_current_version(self):
-        # if self.current_version = server_version:
-        return self.up_to_date
+        if pygame.time.get_ticks() >= 5000:
+            self.updater_socket.send("GET_VERSION".encode('windows-1252'))
+            if self.current_version == self.updater_socket.recv(1024).decode('windows-1252'):
+                self.up_to_date = True
+            else:
+                self.up_to_date = False
+
+            return self.up_to_date
 
     def update_client(self):
-        # Simulate updating client
-        if pygame.time.get_ticks() >= 10000:
-            self.up_to_date = True
+        if not self.up_to_date:
+            pass
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
