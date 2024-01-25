@@ -1,8 +1,10 @@
 import pygame.draw
+import socket
 
 from constants import init_font
 from colors import *
 from audio import get_audio_input_devices, get_audio_output_devices
+from client_server_connection import connect_to_server
 
 
 class MainWindowGUI:
@@ -57,6 +59,17 @@ class MainWindowGUI:
         self.ball_y = (self.floor_y - 7) - 100
         self.ball_down = True
         self.dots = 0
+
+        # Server configuration 82.20.26.36/127.0.0.1
+        self.server_address = "127.0.0.1"
+
+        self.sending_audio_socket = connect_to_server(self.server_address, 8450, socket.AF_INET, socket.SOCK_STREAM)
+        self.receiving_audio_socket = connect_to_server(self.server_address, 8451, socket.AF_INET, socket.SOCK_STREAM)
+        self.sending_messages_socket = connect_to_server(self.server_address, 8452, socket.AF_INET, socket.SOCK_STREAM)
+        self.receiving_messages_socket = connect_to_server(self.server_address, 8453, socket.AF_INET, socket.SOCK_STREAM)
+        self.receiving_old_messages_socket = connect_to_server(self.server_address, 8454, socket.AF_INET, socket.SOCK_STREAM)
+        self.sending_screenshare_socket = connect_to_server(self.server_address, 8455, socket.AF_INET, socket.SOCK_STREAM)
+        self.receiving_screenshare_socket = connect_to_server(self.server_address, 8456, socket.AF_INET, socket.SOCK_STREAM)
 
         self.init_display()
         self.font = init_font()

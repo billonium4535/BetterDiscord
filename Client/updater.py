@@ -1,8 +1,10 @@
 import math
 import pygame.draw
+import socket
 
 from constants import init_font
 from colors import *
+from client_server_connection import connect_to_server
 
 
 class UpdaterWindowGUI:
@@ -17,7 +19,11 @@ class UpdaterWindowGUI:
         self.dots = 0
         self.rotation = 0
 
+        # Server configuration 82.20.26.36/127.0.0.1
+        self.server_address = "127.0.0.1"
+
         self.downloaded_data_size = 0
+        self.updater_socket = connect_to_server(self.server_address, 8457, socket.AF_INET, socket.SOCK_STREAM)
 
         self.init_display()
         self.font = init_font()
