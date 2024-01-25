@@ -65,11 +65,11 @@ class MainWindowGUI:
 
         self.sending_audio_socket = connect_to_server(self.server_address, 8450, socket.AF_INET, socket.SOCK_STREAM)
         self.receiving_audio_socket = connect_to_server(self.server_address, 8451, socket.AF_INET, socket.SOCK_STREAM)
-        self.sending_messages_socket = connect_to_server(self.server_address, 8452, socket.AF_INET, socket.SOCK_STREAM)
-        self.receiving_messages_socket = connect_to_server(self.server_address, 8453, socket.AF_INET, socket.SOCK_STREAM)
-        self.receiving_old_messages_socket = connect_to_server(self.server_address, 8454, socket.AF_INET, socket.SOCK_STREAM)
-        self.sending_screenshare_socket = connect_to_server(self.server_address, 8455, socket.AF_INET, socket.SOCK_STREAM)
-        self.receiving_screenshare_socket = connect_to_server(self.server_address, 8456, socket.AF_INET, socket.SOCK_STREAM)
+        # self.sending_messages_socket = connect_to_server(self.server_address, 8452, socket.AF_INET, socket.SOCK_STREAM)
+        # self.receiving_messages_socket = connect_to_server(self.server_address, 8453, socket.AF_INET, socket.SOCK_STREAM)
+        # self.receiving_old_messages_socket = connect_to_server(self.server_address, 8454, socket.AF_INET, socket.SOCK_STREAM)
+        # self.sending_screenshare_socket = connect_to_server(self.server_address, 8455, socket.AF_INET, socket.SOCK_STREAM)
+        # self.receiving_screenshare_socket = connect_to_server(self.server_address, 8456, socket.AF_INET, socket.SOCK_STREAM)
 
         self.init_display()
         self.font = init_font()
