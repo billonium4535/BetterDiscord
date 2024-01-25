@@ -1,3 +1,6 @@
+import pygame.draw
+import math
+
 from constants import *
 from colors import *
 from audio import get_audio_input_devices, get_audio_output_devices
@@ -6,6 +9,8 @@ from audio import get_audio_input_devices, get_audio_output_devices
 class MainWindowGUI:
     def __init__(self):
         self.screen = pygame.display
+        self.screen_width = 400
+        self.screen_height = 400
 
         self.mouse_down = False
         self.running = True
@@ -16,7 +21,7 @@ class MainWindowGUI:
 
         self.threshold = 500
         self.max_threshold = 1000
-        self.RawAudio = False
+        self.raw_audio = False
 
         self.slider_width = 150
         self.slider_circle_x = (self.threshold / self.max_threshold) * 138  # max 138
@@ -46,11 +51,19 @@ class MainWindowGUI:
         self.scroll_offset_input = 0
         self.scroll_offset_output = 0
 
+        self.connected_to_server = False
+        self.floor_y = (self.screen_height // 2) + 50
+        self.floor_x = ((self.screen_width // 2) - 25, (self.screen_width // 2) + 25)
+        self.ball_speed_y = 0
+        self.ball_y = (self.floor_y - 7) - 100
+        self.ball_down = True
+        self.dots = 0
+
         self.init_display()
         self.run()
 
     def init_display(self):
-        self.screen.set_mode((min_width, min_height))
+        self.screen.set_mode((self.screen_width, self.screen_height))
         self.screen.set_caption("Better Discord")
         self.screen.set_icon(pygame.image.load("./Icons/window_icon.png"))
 
@@ -77,9 +90,9 @@ class MainWindowGUI:
         pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
         self.screen.get_surface().blit(font.render(f"{(self.threshold / 10)}%", True, colors["white"]), (64, 355))
         if self.threshold == 0:
-            self.RawAudio = True
+            self.raw_audio = True
         else:
-            self.RawAudio = False
+            self.raw_audio = False
 
     def draw_call_buttons(self):
         if not self.mute_button_hover:
@@ -137,6 +150,21 @@ class MainWindowGUI:
         if self.output_selected_device and not self.input_open:
             self.screen.get_surface().blit(font.render(self.output_selected_device[0], True, colors["discord-dark"]), (180, 47))
 
+    def draw_connecting_screen(self):
+        pygame.draw.line(self.screen.get_surface(), colors["white"], (self.floor_x[0], self.floor_y), (self.floor_x[1], self.floor_y), 1)
+        pygame.draw.circle(self.screen.get_surface(), colors["white"], (self.screen_width // 2, int(self.ball_y)), 7)
+
+        if self.ball_y < self.floor_y - 7:
+            self.ball_speed_y += 0.5
+        elif self.ball_y >= self.floor_y - 7:
+            self.ball_y = self.floor_y - 7
+            self.ball_speed_y = self.ball_speed_y * -1
+
+        self.ball_y += self.ball_speed_y
+
+        self.screen.get_surface().blit(font.render("Connecting to server" + "." * int(self.dots), True, colors["white"]), ((self.screen_width // 2) - 75, 75))
+        self.dots = (self.dots + 0.1) % 4
+
     def run(self):
         self.running = True
         clock = pygame.time.Clock()
@@ -149,15 +177,21 @@ class MainWindowGUI:
             self.handle_mouse_click()
             self.handle_mouse_position()
 
-            self.draw_voice_channels()
-            self.draw_input_sensitivity_slider()
-            self.draw_call_buttons()
-            self.draw_devices_dropdown()
+            if self.connected_to_server:
+                self.draw_voice_channels()
+                self.draw_input_sensitivity_slider()
+                self.draw_call_buttons()
+                self.draw_devices_dropdown()
+            else:
+                self.draw_connecting_screen()
 
             pygame.display.flip()
             clock.tick(30)
 
         pygame.quit()
+
+    def handle_server_connection_check(self):
+        return self.connected_to_server
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
