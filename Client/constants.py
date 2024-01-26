@@ -1,6 +1,25 @@
 import pygame
+import os
 
-from colors import colors
+
+def client_init():
+    if os.path.exists("./CLIENT_QUIT"):
+        os.remove("./CLIENT_QUIT")
+
+
+def client_exit():
+    with open("./CLIENT_QUIT", "w") as file:
+        file.write("CLIENT_QUIT")
+
+
+def check_client_exit():
+    if os.path.exists("./CLIENT_QUIT"):
+        client_quit = True
+        os.remove("./CLIENT_QUIT")
+    else:
+        client_quit = False
+
+    return client_quit
 
 
 # Font settings
