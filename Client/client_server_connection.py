@@ -2,8 +2,11 @@ import socket
 
 
 def connect_to_server(server_ip, server_port, address_family, socket_kind):
-    client_socket = socket.socket(address_family, socket_kind)
-    client_socket.connect((server_ip, server_port))
+    try:
+        client_socket = socket.socket(address_family, socket_kind)
+        client_socket.connect((server_ip, server_port))
+    except:
+        client_socket = None
     return client_socket
 
 

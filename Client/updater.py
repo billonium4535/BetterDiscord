@@ -1,8 +1,9 @@
 import math
 import pygame.draw
 import socket
+import threading
 
-from constants import init_font
+from constants import init_font, client_exit
 from colors import *
 from client_server_connection import connect_to_server
 
@@ -22,8 +23,11 @@ class UpdaterWindowGUI:
         # Server configuration 82.20.26.36/127.0.0.1
         self.server_address = "127.0.0.1"
 
+        self.last_saved_tick = 0
         self.downloaded_data_size = 0
         self.updater_socket = connect_to_server(self.server_address, 8457, socket.AF_INET, socket.SOCK_STREAM)
+
+        self.connect_to_server_thread = threading.Thread(target=self.connect_to_server_thread)
 
         self.current_version = "v1.0"
 
@@ -92,17 +96,27 @@ class UpdaterWindowGUI:
 
         pygame.quit()
 
+    def connect_to_server_thread(self):
+        while self.updater_socket is None:
+            self.updater_socket = connect_to_server(self.server_address, 8457, socket.AF_INET, socket.SOCK_STREAM)
+            print(self.updater_socket)
+
     def handle_server_connection_check(self):
         # Simulate waiting for a server connection
         if pygame.time.get_ticks() >= 2500:
-            self.updater_socket.send("CONNECTION_CHECK".encode('windows-1252'))
-            if self.updater_socket.recv(1024).decode('windows-1252') == "200 OK":
-                self.connected_to_server = True
+            if self.updater_socket is not None:
+                self.updater_socket.send("CONNECTION_CHECK".encode('windows-1252'))
+                if self.updater_socket.recv(1024).decode('windows-1252') == "200 OK":
+                    self.connected_to_server = True
+                    self.last_saved_tick = pygame.time.get_ticks()
+                else:
+                    self.connected_to_server = False
             else:
-                self.connected_to_server = False
+                if not self.connect_to_server_thread.is_alive():
+                    self.connect_to_server_thread.start()
 
     def check_current_version(self):
-        if pygame.time.get_ticks() >= 5000:
+        if pygame.time.get_ticks() >= self.last_saved_tick + 2500:
             self.updater_socket.send("GET_VERSION".encode('windows-1252'))
             if self.current_version == self.updater_socket.recv(1024).decode('windows-1252'):
                 self.up_to_date = True
@@ -118,4 +132,5 @@ class UpdaterWindowGUI:
     def handle_mouse_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                client_exit()
                 self.running = False
