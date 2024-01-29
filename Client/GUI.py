@@ -4,7 +4,7 @@ import threading
 
 from constants import init_font
 from colors import *
-from audio import get_audio_input_devices, get_audio_output_devices, get_default_audio_devices
+from audio import get_audio_input_devices, get_audio_output_devices, get_default_audio_devices, record_audio, play_audio
 from client_server_connection import connect_to_server
 
 
@@ -311,11 +311,12 @@ class MainWindowGUI:
 
     def handle_sending_audio(self):
         if self.connected_to_server and self.in_call and not self.muted:
-            pass
+            record_audio(self.raw_audio, self.threshold, self.input_selected_device)
 
     def handle_receiving_audio(self):
         if self.connected_to_server and self.in_call and not self.deafaned:
-            pass
+            data = ""  # Receive audio data from the server
+            play_audio(data, self.output_selected_device)
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
