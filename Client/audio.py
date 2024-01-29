@@ -39,6 +39,21 @@ def get_audio_output_devices():
     return output_devices
 
 
+def get_default_audio_devices():
+    p = pyaudio.PyAudio()
+    default_devices = []
+
+    default_input_device_name = p.get_default_input_device_info()['name']
+    default_input_device_index = p.get_default_input_device_info()['index']
+    default_devices.append((default_input_device_name, default_input_device_index))
+
+    default_output_device_name = p.get_default_output_device_info()['name']
+    default_output_device_index = p.get_default_output_device_info()['index']
+    default_devices.append((default_output_device_name, default_output_device_index))
+
+    return default_devices
+
+
 def record_audio(raw_audio, threshold, input_device_index):
     p = pyaudio.PyAudio()
     stream_in = p.open(format=sample_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk_size, input_device_index=input_device_index)
