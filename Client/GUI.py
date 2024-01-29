@@ -4,7 +4,7 @@ import threading
 
 from constants import init_font
 from colors import *
-from audio import get_audio_input_devices, get_audio_output_devices
+from audio import get_audio_input_devices, get_audio_output_devices, get_default_audio_devices
 from client_server_connection import connect_to_server
 
 
@@ -46,8 +46,8 @@ class MainWindowGUI:
         self.output_devices = get_audio_output_devices()
         self.input_device_dropdown = pygame.Rect(175, 5, 200, 25)
         self.output_device_dropdown = pygame.Rect(175, 45, 200, 25)
-        self.input_selected_device = None
-        self.output_selected_device = None
+        self.input_selected_device = get_default_audio_devices()[0]
+        self.output_selected_device = get_default_audio_devices()[1]
         self.input_open = False
         self.output_open = False
         self.scroll_offset_input = 0
@@ -219,17 +219,13 @@ class MainWindowGUI:
     def check_connected_to_server(self):
         try:
             self.data_socket.send("CONNECTION_CHECK".encode('windows-1252'))
-            print("Sent check")
             self.data_socket.settimeout(3)
             if self.data_socket.recv(1024).decode('windows-1252') == "200 OK":
-                print("Received check")
                 self.connected_to_server = True
             else:
-                print("Not received check")
                 self.connected_to_server = False
             self.data_socket.settimeout(None)
         except TimeoutError:
-            print("Timed out")
             self.connected_to_server = False
         except ConnectionResetError:
             self.data_socket = None
@@ -238,13 +234,11 @@ class MainWindowGUI:
         current_tick = pygame.time.get_ticks()
         # Check the client is connected every 5s
         if current_tick - self.last_saved_tick >= 5000 and self.running is True:
-            print("Checking")
             self.last_saved_tick = current_tick
             if self.data_socket is not None:
                 if not self.check_server_connection_thread.is_alive():
                     self.check_server_connection_thread = threading.Thread(target=self.check_connected_to_server)
                     self.check_server_connection_thread.start()
-                    print("Starting socket")
             else:
                 self.connected_to_server = False
                 if not self.connect_to_server_thread.is_alive():
