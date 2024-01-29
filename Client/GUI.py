@@ -1,5 +1,6 @@
 import pygame.draw
 import socket
+import threading
 
 from constants import init_font
 from colors import *
@@ -63,6 +64,8 @@ class MainWindowGUI:
         # Server configuration 82.20.26.36/127.0.0.1
         self.server_address = "127.0.0.1"
 
+        self.last_saved_tick = 0
+
         self.sending_audio_socket = connect_to_server(self.server_address, 8450, socket.AF_INET, socket.SOCK_STREAM)
         self.receiving_audio_socket = connect_to_server(self.server_address, 8451, socket.AF_INET, socket.SOCK_STREAM)
         # self.sending_messages_socket = connect_to_server(self.server_address, 8452, socket.AF_INET, socket.SOCK_STREAM)
@@ -70,6 +73,10 @@ class MainWindowGUI:
         # self.receiving_old_messages_socket = connect_to_server(self.server_address, 8454, socket.AF_INET, socket.SOCK_STREAM)
         # self.sending_screenshare_socket = connect_to_server(self.server_address, 8455, socket.AF_INET, socket.SOCK_STREAM)
         # self.receiving_screenshare_socket = connect_to_server(self.server_address, 8456, socket.AF_INET, socket.SOCK_STREAM)
+        self.data_socket = connect_to_server(self.server_address, 8458, socket.AF_INET, socket.SOCK_STREAM)
+
+        self.connect_to_server_thread = threading.Thread(target=self.connect_to_server_method)
+        self.check_server_connection_thread = threading.Thread(target=self.check_connected_to_server)
 
         self.init_display()
         self.font = init_font()
@@ -190,7 +197,9 @@ class MainWindowGUI:
             self.handle_mouse_click()
             self.handle_mouse_position()
 
-            if self.handle_server_connection_check():
+            self.handle_server_connection_check()
+
+            if self.connected_to_server:
                 self.draw_voice_channels()
                 self.draw_input_sensitivity_slider()
                 self.draw_call_buttons()
@@ -203,11 +212,44 @@ class MainWindowGUI:
 
         pygame.quit()
 
+    def connect_to_server_method(self):
+        while self.data_socket is None:
+            self.data_socket = connect_to_server(self.server_address, 8458, socket.AF_INET, socket.SOCK_STREAM)
+
+    def check_connected_to_server(self):
+        try:
+            self.data_socket.send("CONNECTION_CHECK".encode('windows-1252'))
+            print("Sent check")
+            self.data_socket.settimeout(3)
+            if self.data_socket.recv(1024).decode('windows-1252') == "200 OK":
+                print("Received check")
+                self.connected_to_server = True
+            else:
+                print("Not received check")
+                self.connected_to_server = False
+            self.data_socket.settimeout(None)
+        except TimeoutError:
+            print("Timed out")
+            self.connected_to_server = False
+        except ConnectionResetError:
+            self.data_socket = None
+
     def handle_server_connection_check(self):
-        # Simulate waiting for a server connection
-        if pygame.time.get_ticks() >= 5000:
-            self.connected_to_server = True
-        return self.connected_to_server
+        current_tick = pygame.time.get_ticks()
+        # Check the client is connected every 5s
+        if current_tick - self.last_saved_tick >= 5000 and self.running is True:
+            print("Checking")
+            self.last_saved_tick = current_tick
+            if self.data_socket is not None:
+                if not self.check_server_connection_thread.is_alive():
+                    self.check_server_connection_thread = threading.Thread(target=self.check_connected_to_server)
+                    self.check_server_connection_thread.start()
+                    print("Starting socket")
+            else:
+                self.connected_to_server = False
+                if not self.connect_to_server_thread.is_alive():
+                    self.connect_to_server_thread = threading.Thread(target=self.connect_to_server_method)
+                    self.connect_to_server_thread.start()
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
