@@ -16,7 +16,7 @@ def get_audio_input_devices():
         device_name = device_info['name']
         device_index = device_info['index']
 
-        if device_info['maxInputChannels'] > 0:
+        if device_info['maxOutputChannels'] == 0 and device_info['maxInputChannels'] > 0 and device_info['hostApi'] == 0 and "Microsoft Sound Mapper" not in device_name:
             input_devices.append((device_name, device_index))
 
     p.terminate()
@@ -32,7 +32,7 @@ def get_audio_output_devices():
         device_name = device_info['name']
         device_index = device_info['index']
 
-        if device_info['maxOutputChannels'] > 0:
+        if device_info['maxInputChannels'] == 0 and device_info['maxOutputChannels'] > 0 and device_info['hostApi'] == 0 and "Microsoft Sound Mapper" not in device_name:
             output_devices.append((device_name, device_index))
 
     p.terminate()
@@ -51,6 +51,7 @@ def get_default_audio_devices():
     default_output_device_index = p.get_default_output_device_info()['index']
     default_devices.append((default_output_device_name, default_output_device_index))
 
+    p.terminate()
     return default_devices
 
 
