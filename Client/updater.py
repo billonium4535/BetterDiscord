@@ -97,9 +97,8 @@ class UpdaterWindowGUI:
         pygame.quit()
 
     def connect_to_server_thread(self):
-        while self.updater_socket is None:
+        while self.updater_socket is None and self.running is True:
             self.updater_socket = connect_to_server(self.server_address, 8457, socket.AF_INET, socket.SOCK_STREAM)
-            print(self.updater_socket)
 
     def handle_server_connection_check(self):
         # Simulate waiting for a server connection
