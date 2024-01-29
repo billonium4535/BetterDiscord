@@ -39,6 +39,7 @@ class MainWindowGUI:
         self.deafan_button_hover = False
 
         self.in_call = False
+        self.clients_in_call = []
         self.leave_call_button = pygame.Rect(110, 325, 45, 25)
         self.leave_call_button_hover = False
 
@@ -105,6 +106,14 @@ class MainWindowGUI:
         # vc icon
         self.screen.get_surface().blit(pygame.transform.scale(pygame.image.load("./Icons/voice_channel.png"), (17, 17)), (15, 10))
 
+        # Connected clients
+        client_text_y_pos = 35
+        if self.clients_in_call[0] != "":
+            for client in self.clients_in_call:
+                text_surface = self.font.render(f"- {client}", True, colors["discord-text"])
+                self.screen.get_surface().blit(text_surface, (20, client_text_y_pos))
+                client_text_y_pos += 20
+
     def draw_input_sensitivity_slider(self):
         pygame.draw.rect(self.screen.get_surface(), colors["white"], (5, 375, self.slider_width, 12), border_radius=10)
         pygame.draw.circle(self.screen.get_surface(), colors["red"], (11 + self.slider_circle_x, 381), 6)
@@ -150,19 +159,21 @@ class MainWindowGUI:
             pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 5, 200, 25 * min(len(self.input_devices) + 1, 6)), border_radius=10)
             for i, (name, index) in enumerate(self.input_devices[self.scroll_offset_input:self.scroll_offset_input + 5]):
                 self.screen.get_surface().blit(self.font.render(name, True, colors["discord-dark"]), (180, 35 + (25 * i)))
-            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 10, 5, 140), border_radius=10)
-            scroll_indicator_height = 140 / len(self.input_devices) * 5
-            scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_input / (len(self.input_devices) - 5))
-            pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 10 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
+            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 10, 5, min(15 + (25 * len(self.input_devices)), 140)), border_radius=10)
+            if len(self.input_devices) > 4:
+                scroll_indicator_height = 140 / len(self.input_devices) * 5
+                scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_input / (len(self.input_devices) - 5))
+                pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 10 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
 
         if self.output_open:
             pygame.draw.rect(self.screen.get_surface(), colors["white"], (175, 45, 200, 25 * min(len(self.output_devices) + 1, 6)), border_radius=10)
             for i, (name, index) in enumerate(self.output_devices[self.scroll_offset_output:self.scroll_offset_output + 5]):
                 self.screen.get_surface().blit(self.font.render(name, True, colors["discord-dark"]), (180, 75 + (25 * i)))
-            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 50, 5, 140), border_radius=10)
-            scroll_indicator_height = 140 / len(self.input_devices) * 5
-            scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_output / (len(self.output_devices) - 5))
-            pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 50 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
+            pygame.draw.rect(self.screen.get_surface(), colors["grey"], (175, 50, 5, min(15 + (25 * len(self.output_devices)), 140)), border_radius=10)
+            if len(self.output_devices) > 4:
+                scroll_indicator_height = 140 / len(self.output_devices) * 5
+                scroll_indicator_pos = (140 - scroll_indicator_height) * (self.scroll_offset_output / (len(self.output_devices) - 5))
+                pygame.draw.rect(self.screen.get_surface(), colors["black"], pygame.Rect(175, 50 + scroll_indicator_pos, 5, scroll_indicator_height), border_radius=10)
 
         if self.input_selected_device:
             self.screen.get_surface().blit(self.font.render(self.input_selected_device[0], True, colors["discord-dark"]), (180, 7))
@@ -220,13 +231,19 @@ class MainWindowGUI:
         try:
             self.data_socket.send("CONNECTION_CHECK".encode('windows-1252'))
             self.data_socket.settimeout(3)
-            if self.data_socket.recv(1024).decode('windows-1252') == "200 OK":
+            if self.data_socket.recv(6).decode('windows-1252') == "200 OK":
+                local_clients_in_call = self.data_socket.recv(1024).decode('windows-1252').replace("[", "").replace("]", "").replace("'", "").split(", ")
+                self.clients_in_call = []
+                for local_client in local_clients_in_call:
+                    self.clients_in_call.append(local_client)
                 self.connected_to_server = True
             else:
                 self.connected_to_server = False
+                print("Disconnected - Bad status")
             self.data_socket.settimeout(None)
         except TimeoutError:
             self.connected_to_server = False
+            print("Disconnected - Timeout")
         except ConnectionResetError:
             self.data_socket = None
 
@@ -241,9 +258,56 @@ class MainWindowGUI:
                     self.check_server_connection_thread.start()
             else:
                 self.connected_to_server = False
+                print("Disconnected - Socket is none")
                 if not self.connect_to_server_thread.is_alive():
                     self.connect_to_server_thread = threading.Thread(target=self.connect_to_server_method)
                     self.connect_to_server_thread.start()
+
+    def handle_join_call(self):
+        if self.connected_to_server and not self.in_call:
+            try:
+                self.data_socket.send("JOIN_CALL".encode('windows-1252'))
+                self.data_socket.settimeout(3)
+                if self.data_socket.recv(1024).decode('windows-1252') == "200 CALL_JOINED":
+                    local_clients_in_call = self.data_socket.recv(1024).decode('windows-1252').replace("[", "").replace("]", "").replace("'", "").split(", ")
+                    self.clients_in_call = []
+                    for local_client in local_clients_in_call:
+                        self.clients_in_call.append(local_client)
+                    self.in_call = True
+                else:
+                    self.in_call = False
+                self.data_socket.settimeout(None)
+            except TimeoutError:
+                self.connected_to_server = False
+                print("Disconnected - Timeout of join call with TimeoutError")
+            except AttributeError:
+                self.connected_to_server = False
+                print("Disconnected - Timeout of join call with AttributeError")
+            except ConnectionResetError:
+                self.data_socket = None
+
+    def handle_leave_call(self):
+        if self.connected_to_server and self.in_call:
+            try:
+                self.data_socket.send("LEAVE_CALL".encode('windows-1252'))
+                self.data_socket.settimeout(3)
+                if self.data_socket.recv(1024).decode('windows-1252') == "200 CALL_LEFT":
+                    local_clients_in_call = self.data_socket.recv(1024).decode('windows-1252').replace("[", "").replace("]", "").replace("'", "").split(", ")
+                    self.clients_in_call = []
+                    for local_client in local_clients_in_call:
+                        self.clients_in_call.append(local_client)
+                    self.in_call = False
+                else:
+                    self.in_call = True
+                self.data_socket.settimeout(None)
+            except TimeoutError:
+                self.connected_to_server = False
+                self.in_call = False
+                print("Disconnected - Timeout of leave call")
+            except ConnectionResetError:
+                self.data_socket = None
+                self.connected_to_server = False
+                self.in_call = False
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
@@ -286,14 +350,17 @@ class MainWindowGUI:
                         self.deafaned = True
                         self.muted = True
                     self.debouncer = True
-                if self.leave_call_button.collidepoint(mouse_x, mouse_y):
+                if self.leave_call_button.collidepoint(mouse_x, mouse_y) and self.in_call:
+                    self.handle_leave_call()
                     self.debouncer = True
 
                 # Dropdowns
                 if self.input_device_dropdown.collidepoint(mouse_x, mouse_y) and not self.output_open:
+                    self.input_devices = get_audio_input_devices()
                     self.input_open = not self.input_open
                     self.debouncer = True
                 if self.output_device_dropdown.collidepoint(mouse_x, mouse_y) and not self.input_open:
+                    self.output_devices = get_audio_output_devices()
                     self.output_open = not self.output_open
                     self.debouncer = True
                 if pygame.Rect(175, 5, 200, 25 * (len(self.input_devices) + 1)).collidepoint(mouse_x, mouse_y) and self.input_open:
@@ -313,6 +380,11 @@ class MainWindowGUI:
                     self.debouncer = True
                 if not self.output_device_dropdown.collidepoint(mouse_x, mouse_y) and self.output_open:
                     self.output_open = False
+                    self.debouncer = True
+
+                # Voice channels
+                if self.voice_channel_1_box.collidepoint(mouse_x, mouse_y) and not self.in_call:
+                    self.handle_join_call()
                     self.debouncer = True
         else:
             self.dragging = False
