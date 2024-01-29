@@ -309,6 +309,14 @@ class MainWindowGUI:
                 self.connected_to_server = False
                 self.in_call = False
 
+    def handle_sending_audio(self):
+        if self.connected_to_server and self.in_call and not self.muted:
+            pass
+
+    def handle_receiving_audio(self):
+        if self.connected_to_server and self.in_call and not self.deafaned:
+            pass
+
     def handle_mouse_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
