@@ -17,6 +17,8 @@ class Server:
         # self.sending_screenshare_socket = server_socket_setup(self.server_host, 8455, socket.AF_INET, socket.SOCK_STREAM, 5)
         # self.receiving_screenshare_socket = server_socket_setup(self.server_host, 8456, socket.AF_INET, socket.SOCK_STREAM, 5)
         self.updater_socket = server_socket_setup(self.server_host, 8457, socket.AF_INET, socket.SOCK_STREAM, 5)
+        self.data_socket = server_socket_setup(self.server_host, 8458, socket.AF_INET, socket.SOCK_STREAM, 5)
+
         self.connected_clients = []
         self.connected_addresses = []
         self.client_audio_data = {}
@@ -34,7 +36,8 @@ class Server:
             # self.receiving_old_messages_socket,
             # self.sending_screenshare_socket,
             # self.receiving_screenshare_socket,
-            self.updater_socket
+            self.updater_socket,
+            self.data_socket
         ]
 
         for server_socket in sockets_to_listen:
@@ -50,8 +53,10 @@ class Server:
                     threading.Thread(target=self.client_sending_audio, args=[client_socket]).start()
                 elif server_socket == self.receiving_audio_socket:
                     threading.Thread(target=self.client_receiving_audio, args=[client_socket]).start()
-                if server_socket == self.updater_socket:
+                elif server_socket == self.updater_socket:
                     threading.Thread(target=self.client_updater, args=[client_socket]).start()
+                elif server_socket == self.data_socket:
+                    threading.Thread(target=self.data_handling, args=[client_socket]).start()
             except:
                 pass
 
@@ -94,6 +99,19 @@ class Server:
                     client_socket.send("200 OK".encode('windows-1252'))
                 if data == "GET_VERSION":
                     client_socket.send(self.version.encode('windows-1252'))
+        except Exception as e:
+            pass
+        finally:
+            self.client_disconnect(client_socket)
+
+    def data_handling(self, client_socket):
+        try:
+            while self.running:
+                data = client_socket.recv(1024).decode('windows-1252')
+                if not data:
+                    break
+                if data == "CONNECTION_CHECK":
+                    client_socket.send("200 OK".encode('windows-1252'))
         except Exception as e:
             pass
         finally:
