@@ -22,6 +22,7 @@ class Server:
         self.connected_clients = []
         self.connected_addresses = []
         self.client_audio_data = {}
+        self.clients_in_call = []
 
         self.version = get_version()
 
@@ -63,6 +64,8 @@ class Server:
     def client_disconnect(self, client_socket):
         if client_socket in self.client_audio_data:
             del self.client_audio_data[client_socket]
+        if client_socket.getpeername()[0] in self.clients_in_call:
+            self.clients_in_call.remove(client_socket.getpeername()[0])
         client_socket.close()
 
     def client_sending_audio(self, client_socket):
@@ -112,6 +115,16 @@ class Server:
                     break
                 if data == "CONNECTION_CHECK":
                     client_socket.send("200 OK".encode('windows-1252'))
+                    client_socket.send(f"{self.clients_in_call}".encode('windows-1252'))
+                if data == "JOIN_CALL":
+                    if client_socket.getpeername()[0] not in self.clients_in_call:
+                        self.clients_in_call.append(client_socket.getpeername()[0])
+                    client_socket.send("200 CALL_JOINED".encode('windows-1252'))
+                    client_socket.send(f"{self.clients_in_call}".encode('windows-1252'))
+                if data == "LEAVE_CALL":
+                    self.clients_in_call.remove(client_socket.getpeername()[0])
+                    client_socket.send("200 CALL_LEFT".encode('windows-1252'))
+                    client_socket.send(f"{self.clients_in_call}".encode('windows-1252'))
         except Exception as e:
             pass
         finally:
