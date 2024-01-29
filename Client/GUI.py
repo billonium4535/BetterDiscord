@@ -78,6 +78,8 @@ class MainWindowGUI:
 
         self.connect_to_server_thread = threading.Thread(target=self.connect_to_server_method)
         self.check_server_connection_thread = threading.Thread(target=self.check_connected_to_server)
+        self.handle_sending_audio_thread = threading.Thread(target=self.handle_sending_audio)
+        self.handle_receiving_audio_thread = threading.Thread(target=self.handle_receiving_audio)
 
         self.init_display()
         self.font = init_font()
@@ -274,6 +276,12 @@ class MainWindowGUI:
                     for local_client in local_clients_in_call:
                         self.clients_in_call.append(local_client)
                     self.in_call = True
+                    if not self.handle_sending_audio_thread.is_alive():
+                        self.handle_sending_audio_thread = threading.Thread(target=self.handle_sending_audio)
+                        self.handle_sending_audio_thread.start()
+                    if not self.handle_receiving_audio_thread.is_alive():
+                        self.handle_receiving_audio_thread = threading.Thread(target=self.handle_receiving_audio)
+                        self.handle_receiving_audio_thread.start()
                 else:
                     self.in_call = False
                 self.data_socket.settimeout(None)
@@ -310,13 +318,22 @@ class MainWindowGUI:
                 self.in_call = False
 
     def handle_sending_audio(self):
-        if self.connected_to_server and self.in_call and not self.muted:
-            record_audio(self.raw_audio, self.threshold, self.input_selected_device)
+        while self.in_call:
+            if self.connected_to_server and not self.muted:
+                pass
+                # try:
+                #     temp_data = record_audio(self.raw_audio, self.threshold, self.input_selected_device[1])
+                # except Exception as e:
+                #     print(e)
 
     def handle_receiving_audio(self):
-        if self.connected_to_server and self.in_call and not self.deafaned:
-            data = ""  # Receive audio data from the server
-            play_audio(data, self.output_selected_device)
+        while self.in_call:
+            if self.connected_to_server and not self.deafaned:
+                pass
+                # try:
+                #     play_audio(temp_data, self.output_selected_device[1])
+                # except Exception as e:
+                #     print(e)
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
