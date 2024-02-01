@@ -3,6 +3,7 @@ git pull origin main
 
 To clone project on server:
 git clone https://github.com/username/repository-name.git
+e.g. 'git clone -b "First-Stable-Release-(v2)" https://github.com/billonium4535/BetterDiscord.git'
 
 To run server:
 python3 server.py

@@ -20,8 +20,8 @@ class UpdaterWindowGUI:
         self.dots = 0
         self.rotation = 0
 
-        # Server configuration 82.20.26.36/127.0.0.1
-        self.server_address = "127.0.0.1"
+        self.server_address = next(open("./SERVER_DETAILS.cfg"), "").strip()
+        print(self.server_address)
 
         self.last_saved_tick = 0
         self.downloaded_data_size = 0
