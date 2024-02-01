@@ -2,10 +2,55 @@ import math
 import pygame.draw
 import socket
 import threading
+import os
+import ipaddress
 
-from constants import init_font, client_exit
-from colors import *
-from client_server_connection import connect_to_server
+
+colors = {
+    "white": (255, 255, 255),
+    "black": (0, 0, 0),
+    "red": (255, 0, 0),
+    "grey": (128, 128, 128),
+    "discord-dark": (49, 51, 56),
+    "discord-panel": (43, 45, 49),
+    "discord-message-box": (56, 58, 64),
+    "discord-divider": (38, 40, 44),
+    "discord-text": (242, 243, 245)
+}
+
+
+def check_for_server_details(file_path):
+    if os.path.exists(file_path):
+        try:
+            ipaddress.ip_address(next(open(file_path), "").strip())
+            return True
+        except ValueError:
+            return False
+    else:
+        return False
+
+
+def connect_to_server(server_ip, server_port, address_family, socket_kind):
+    try:
+        client_socket = socket.socket(address_family, socket_kind)
+        client_socket.connect((server_ip, server_port))
+    except:
+        client_socket = None
+    return client_socket
+
+
+def client_exit():
+    with open("./CLIENT_QUIT", "w") as file:
+        file.write("CLIENT_QUIT")
+
+
+# Font settings
+def init_font():
+    pygame.font.init()
+    font_size = 15
+    font = pygame.font.Font("./Fonts/arial.ttf", font_size)
+    font.set_italic(True)
+    return font
 
 
 class UpdaterWindowGUI:
@@ -21,7 +66,6 @@ class UpdaterWindowGUI:
         self.rotation = 0
 
         self.server_address = next(open("./SERVER_DETAILS.cfg"), "").strip()
-        print(self.server_address)
 
         self.last_saved_tick = 0
         self.downloaded_data_size = 0
@@ -133,3 +177,7 @@ class UpdaterWindowGUI:
             if event.type == pygame.QUIT:
                 client_exit()
                 self.running = False
+
+
+if check_for_server_details("./SERVER_DETAILS.cfg"):
+    UpdaterWindowGUI()

@@ -1,5 +1,5 @@
 To update project on server:
-git pull origin main
+git pull origin "First-Stable-Release-(v2)"
 
 To clone project on server:
 git clone https://github.com/username/repository-name.git
