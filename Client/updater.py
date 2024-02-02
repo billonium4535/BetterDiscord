@@ -37,6 +37,11 @@ def client_exit():
         file.write("CLIENT_QUIT")
 
 
+def natural_client_exit():
+    with open("./CLIENT_NATURAL_QUIT", "w") as file:
+        file.write("CLIENT_NATURAL_QUIT")
+
+
 # Font settings
 def init_font():
     pygame.font.init()
@@ -53,6 +58,7 @@ class UpdaterWindowGUI:
         self.screen_height = 400
 
         self.running = True
+        self.force_close = False
         self.connected_to_server = False
         self.up_to_date = False
         self.dots = 0
@@ -131,6 +137,9 @@ class UpdaterWindowGUI:
             pygame.display.flip()
             clock.tick(30)
 
+        if not self.force_close:
+            natural_client_exit()
+
         pygame.quit()
 
     def connect_to_server_thread(self):
@@ -170,6 +179,7 @@ class UpdaterWindowGUI:
             if event.type == pygame.QUIT:
                 client_exit()
                 self.running = False
+                self.force_close = True
 
 
 if check_for_server_details("./SERVER_DETAILS.cfg"):
