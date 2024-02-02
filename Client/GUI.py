@@ -15,10 +15,16 @@ colors = {
     "discord-text": (242, 243, 245)
 }
 
+
+# def audio_setup():
 chunk_size = 1024
 sample_format = pyaudio.paInt16
 channels = 1
 sample_rate = 44100
+
+p = pyaudio.PyAudio()
+stream_in = p.open(format=sample_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk_size, input_device_index=1)
+stream_out = p.open(format=sample_format, channels=channels, rate=sample_rate, output=True, frames_per_buffer=chunk_size, output_device_index=4)
 
 
 def get_audio_input_devices():
@@ -69,9 +75,7 @@ def get_default_audio_devices():
     return default_devices
 
 
-def record_audio(raw_audio, threshold, input_device_index):
-    p = pyaudio.PyAudio()
-    stream_in = p.open(format=sample_format, channels=channels, rate=sample_rate, input=True, frames_per_buffer=chunk_size, input_device_index=input_device_index)
+def record_audio(raw_audio, threshold):
     input_data = stream_in.read(chunk_size)
     input_array = np.frombuffer(input_data, dtype=np.int16)
 
@@ -81,9 +85,7 @@ def record_audio(raw_audio, threshold, input_device_index):
         return input_data
 
 
-def play_audio(output_data, output_device_index):
-    p = pyaudio.PyAudio()
-    stream_out = p.open(format=sample_format, channels=channels, rate=sample_rate, output=True, frames_per_buffer=chunk_size, output_device_index=output_device_index)
+def play_audio(output_data):
     stream_out.write(output_data)
 
 
@@ -117,7 +119,7 @@ class MainWindowGUI:
         self.voice_channel_1_box = pygame.Rect(5, 5, 150, 25)
         self.voice_channel_1_box_hover = False
 
-        self.threshold = 500
+        self.threshold = 0
         self.max_threshold = 1000
         self.raw_audio = False
 
@@ -413,22 +415,30 @@ class MainWindowGUI:
                 self.in_call = False
 
     def handle_sending_audio(self):
-        while self.in_call:
+        while self.in_call and self.running:
             if self.connected_to_server and not self.muted:
-                pass
-                # try:
-                #     temp_data = record_audio(self.raw_audio, self.threshold, self.input_selected_device[1])
-                # except Exception as e:
-                #     print(e)
+                try:
+                    if self.sending_audio_socket is None:
+                        self.sending_audio_socket = connect_to_server(self.server_address, 8450, socket.AF_INET, socket.SOCK_STREAM)
+                    else:
+                        temp_audio = record_audio(self.raw_audio, self.threshold)
+                        if temp_audio is not None:
+                            self.sending_audio_socket.send(temp_audio)
+                except Exception as e:
+                    print(e)
 
     def handle_receiving_audio(self):
-        while self.in_call:
+        while self.in_call and self.running:
             if self.connected_to_server and not self.deafaned:
-                pass
-                # try:
-                #     play_audio(temp_data, self.output_selected_device[1])
-                # except Exception as e:
-                #     print(e)
+                try:
+                    if self.receiving_audio_socket is None:
+                        self.receiving_audio_socket = connect_to_server(self.server_address, 8451, socket.AF_INET, socket.SOCK_STREAM)
+                    else:
+                        temp_audio = self.sending_audio_socket.recv(1024)
+                        if temp_audio is not None:
+                            play_audio(temp_audio)
+                except Exception as e:
+                    print(e)
 
     def handle_mouse_events(self):
         for event in pygame.event.get():
