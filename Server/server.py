@@ -74,21 +74,23 @@ class Server:
                 data = client_socket.recv(1024)
                 if not data:
                     break
-                self.client_audio_data[client_socket] = data
+                client_socket.send(data)
+                # self.client_audio_data[client_socket] = data
         except Exception as e:
-            pass
+            print(e)
         finally:
             self.client_disconnect(client_socket)
 
     def client_receiving_audio(self, client_socket):
         try:
             while self.running:
-                merged_audio = b"".join([audio_data for sock, audio_data in self.client_audio_data.items() if sock != client_socket])
-                for sock in self.client_audio_data.keys():
-                    if sock != client_socket:
-                        sock.send(merged_audio)
+                pass
+                # merged_audio = b"".join([audio_data for sock, audio_data in self.client_audio_data.items() if sock != client_socket])
+                # for sock in self.client_audio_data.keys():
+                #     if sock != client_socket:
+                #         sock.send(merged_audio)
         except Exception as e:
-            pass
+            print(e)
         finally:
             self.client_disconnect(client_socket)
 
@@ -103,7 +105,7 @@ class Server:
                 if data == "GET_VERSION":
                     client_socket.send(self.version.encode('windows-1252'))
         except Exception as e:
-            pass
+            print(e)
         finally:
             self.client_disconnect(client_socket)
 
@@ -126,7 +128,7 @@ class Server:
                     client_socket.send("200 CALL_LEFT".encode('windows-1252'))
                     client_socket.send(f"{self.clients_in_call}".encode('windows-1252'))
         except Exception as e:
-            pass
+            print(e)
         finally:
             self.client_disconnect(client_socket)
 
