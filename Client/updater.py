@@ -2,25 +2,12 @@ import math
 import pygame.draw
 import socket
 import threading
-import os
-import ipaddress
 
 
 colors = {
     "white": (255, 255, 255),
     "discord-dark": (49, 51, 56)
 }
-
-
-def check_for_server_details(file_path):
-    if os.path.exists(file_path):
-        try:
-            ipaddress.ip_address(next(open(file_path), "").strip())
-            return True
-        except ValueError:
-            return False
-    else:
-        return False
 
 
 def connect_to_server(server_ip, server_port, address_family, socket_kind):
@@ -180,7 +167,3 @@ class UpdaterWindowGUI:
                 client_exit()
                 self.running = False
                 self.force_close = True
-
-
-if check_for_server_details("./SERVER_DETAILS.cfg"):
-    UpdaterWindowGUI()

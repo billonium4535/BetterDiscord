@@ -549,6 +549,3 @@ class MainWindowGUI:
             self.scroll_offset_input = max(0, min(len(self.input_devices) - 5, self.scroll_offset_input + direction))
         elif self.output_open:
             self.scroll_offset_output = max(0, min(len(self.output_devices) - 5, self.scroll_offset_output + direction))
-
-
-MainWindowGUI()
