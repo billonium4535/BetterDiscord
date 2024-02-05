@@ -2,6 +2,10 @@ import os
 import subprocess
 import shutil
 
+print("Have you updated the version in 'VERSION' AND 'updater.py' -> 'self.current_version'? (y/n)")
+if input(">").strip().lower() != "y":
+    exit()
+
 
 # Make Latest_Version old
 def find_highest_version(folder_path):
@@ -18,7 +22,8 @@ def find_highest_version(folder_path):
     return next_version
 
 
-os.rename("./Server/Latest_Version/BetterDiscord.zip", find_highest_version("./Server/Latest_Version"))
+if os.path.exists("./Server/Latest_Version/BetterDiscord.zip"):
+    os.rename("./Server/Latest_Version/BetterDiscord.zip", find_highest_version("./Server/Latest_Version"))
 
 # Create Latest_Version folder
 os.makedirs("./Server/Latest_Version/BetterDiscord")
