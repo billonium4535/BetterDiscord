@@ -2,6 +2,7 @@ import math
 import pygame.draw
 import socket
 import threading
+import sys
 
 
 colors = {
@@ -167,3 +168,7 @@ class UpdaterWindowGUI:
                 client_exit()
                 self.running = False
                 self.force_close = True
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "RunFromMain":
+    UpdaterWindowGUI()

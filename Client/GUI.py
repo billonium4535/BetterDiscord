@@ -3,6 +3,7 @@ import socket
 import threading
 import pyaudio
 import numpy as np
+import sys
 
 colors = {
     "white": (255, 255, 255),
@@ -549,3 +550,7 @@ class MainWindowGUI:
             self.scroll_offset_input = max(0, min(len(self.input_devices) - 5, self.scroll_offset_input + direction))
         elif self.output_open:
             self.scroll_offset_output = max(0, min(len(self.output_devices) - 5, self.scroll_offset_output + direction))
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "RunFromMain":
+    MainWindowGUI()
