@@ -7,3 +7,9 @@ e.g. 'git clone -b "First-Stable-Release-(v2)" https://github.com/billonium4535/
 
 To run server:
 python3 server.py
+
+OSError: [Errno 98] Address already in use:
+Run:
+`sudo lsof -i :PORT`
+`sudo kill -9 PID`
+
