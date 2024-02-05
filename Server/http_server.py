@@ -11,5 +11,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         return ZIP_FILES_LOCATION
 
 
-with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-    httpd.serve_forever()
+def start_server():
+    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+        httpd.serve_forever()

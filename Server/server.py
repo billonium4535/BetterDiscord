@@ -3,6 +3,7 @@ import threading
 
 from server_client_connection import server_socket_setup
 from get_version import get_version
+import http_server
 
 
 class Server:
@@ -18,6 +19,8 @@ class Server:
         # self.receiving_screenshare_socket = server_socket_setup(self.server_host, 8456, socket.AF_INET, socket.SOCK_STREAM, 5)
         self.updater_socket = server_socket_setup(self.server_host, 8457, socket.AF_INET, socket.SOCK_STREAM, 5)
         self.data_socket = server_socket_setup(self.server_host, 8458, socket.AF_INET, socket.SOCK_STREAM, 5)
+
+        self.http_server_thread = threading.Thread(target=http_server.start_server)
 
         self.connected_clients = []
         self.connected_addresses = []
@@ -135,6 +138,9 @@ class Server:
     def run(self):
         while self.running:
             self.listen_for_clients()
+            if not self.http_server_thread.is_alive():
+                self.http_server_thread.start()
+                print("started")
 
 
 Server()
