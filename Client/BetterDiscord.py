@@ -4,9 +4,6 @@ import os
 import time
 import ipaddress
 
-import GUI
-import updater
-
 running = True
 
 
@@ -51,18 +48,8 @@ if __name__ == "__main__":
     client_init()
     if check_for_server_details("./SERVER_DETAILS.cfg"):
         if os.path.exists("./updater.exe"):
-            subprocess.run("./updater.exe", check=True)
+            subprocess.run(["./updater.exe", "RunFromMain"], check=True)
             while not check_client_exit() and not check_natural_client_exit():
                 time.sleep(3)
             if os.path.exists("./GUI.exe"):
-                subprocess.run("./GUI.exe", check=True)
-            else:
-                GUI.MainWindowGUI()
-        else:
-            updater.UpdaterWindowGUI()
-            while not check_client_exit() and not check_natural_client_exit():
-                time.sleep(3)
-            if os.path.exists("./GUI.exe"):
-                subprocess.run("./GUI.exe", check=True)
-            else:
-                GUI.MainWindowGUI()
+                subprocess.run(["./GUI.exe", "RunFromMain"], check=True)
