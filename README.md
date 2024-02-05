@@ -18,3 +18,14 @@ This is a simple chat application implemented in Python using the Pygame library
  - Real-time chat with a server
  - Dynamic resizing of the client window
  - Separate chat, input, channels, and members sections
+
+## Packaging to `.zip`
+ 1. Update `self.current_version` in `updater.py`.
+ 2. Update `VERSION` on the server to the latest version
+ 3. Create `BetterDiscord.zip` and add the following files/folders:
+    - Fonts
+    - Icons
+    - GUI.exe
+    - SERVER_DETAILS.cfg
+    - updater.exe
+ 4. Move `BetterDiscord.zip` to the server under the dir `/Server/Latest_Version/BetterDiscord.zip`
