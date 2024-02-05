@@ -10,6 +10,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
     def translate_path(self, path):
         return ZIP_FILES_LOCATION
 
+    def log_request(self, code='-', size='-'):
+        pass
+
 
 def start_server():
     with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
