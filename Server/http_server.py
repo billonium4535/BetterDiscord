@@ -13,4 +13,10 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
 def start_server():
     with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-        httpd.serve_forever()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("Server shutting down...")
+            httpd.server_close()
+        except Exception as e:
+            print(f"Unexpected error: {e}")
